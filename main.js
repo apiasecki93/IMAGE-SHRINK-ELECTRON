@@ -1,7 +1,19 @@
-const { app, BrowserWindow, Menu, globalShortcut, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, globalShortcut, ipcMain, shell } = require("electron");
+const path = require("path");
+const os = require("os");
+const imagemin = require("imagemin");
+const imageminMozjpeg = require("imagemin-mozjpeg");
+const imageminPngquant = require("imagemin-pngquant");
+const slash = require("slash"); // to kocnevrt back slash to front slash and vice versa
+const log = require("electron-log");
 
-//Set env
-process.env.NODE_ENV = 'development';
+
+
+
+//Set env and uncomment needed env
+// process.env.NODE_ENV = 'development';
+process.env.NODE_ENV = 'production';
+
 
 const isDev = process.env.NODE_ENV !== 'production' ? true : false;
 const isMac = process.platform === 'darwin' ? true : false;
@@ -146,10 +158,42 @@ const menu = [
     //     ],
     // },
 ]
-
+//ipcMain.on listen for incoming connections from renderer process, in this case listening for image:minimize event which will provide object with options like quality and path from picture
 ipcMain.on('image:minimize', (e, options) => {
-    console.log(options)
+    options.dest = path.join(os.homedir(), 'imageshrink')
+    shrinkImage(options)
 })
+
+async function shrinkImage({imgPath, quality, dest}) {
+    try {
+        const pngQuality = quality / 100
+        const files = await imagemin([slash(imgPath)], {
+            destination: dest,
+            plugins: [
+                imageminMozjpeg({quality}),
+                imageminPngquant({
+                    quality: [pngQuality, pngQuality]
+                }),
+            ]
+        })
+        
+        // it will console buffer img and also path like also a destination
+        // console.log(files)
+
+        //Instead of consoling log to the server we can log it to the log file
+        log.info(files)
+        
+        //Use shell from Electron (like cmd in Windows) to open file with converted picture
+        shell.openPath(dest)
+       // shell.openPath('C:\\Users\%USERPROFILE%\AppData\Roaming\image-shrink\logs\main.log')
+
+        //send message to renderer process to show success message
+        mainWindow.webContents.send('image:minimize:done')
+    } catch (err){
+        // console.log(err)
+        log.error(err)
+    }
+}
 
 
 
