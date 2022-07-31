@@ -64,8 +64,8 @@ function createAboutWindow() {
     //mainWindow instanciation (with properties of the main window)
   aboutWindow = new BrowserWindow({
     title: "About ImageShrink",
-    width:  500,
-    height: 600,
+    width:  300,
+    height: 300,
     icon: `${__dirname}/assets/icons/Icon_256x256.png`,
     resizable: isDev ? true : false,
     backgroundColor: '#ffffff',
@@ -185,7 +185,11 @@ async function shrinkImage({imgPath, quality, dest}) {
         
         //Use shell from Electron (like cmd in Windows) to open file with converted picture
         shell.openPath(dest)
-       // shell.openPath('C:\\Users\%USERPROFILE%\AppData\Roaming\image-shrink\logs\main.log')
+        //console.log(dest)
+        let logDest = path.join(os.homedir(), '/AppData/Roaming/image-shrink/logs')
+        // shell.openPath('%userprofile%\AppData\Roaming\image-shrink\logs\main.log')
+        // 
+        shell.openPath(logDest)
 
         //send message to renderer process to show success message
         mainWindow.webContents.send('image:minimize:done')
